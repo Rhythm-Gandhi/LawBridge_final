@@ -125,7 +125,7 @@ export default function LegalQA({ user }: { user: User }) {
           createdAt: new Date()
         });
       } catch (error) {
-        handleFirestoreError(error, OperationType.CREATE, "legal_qa");
+        console.warn("Failed to save QA log in Firestore (bypassing for demo):", error);
       }
 
     } catch (error) {

@@ -66,12 +66,16 @@ export default function AIDrafting({ user }: { user: User }) {
       setDraft(response.text);
 
       // Log the action
-      await addDoc(collection(db, "system_logs"), {
-        uid: user.uid,
-        action: "AI_DRAFT_GENERATE",
-        details: `Generated ${selectedType.label} draft`,
-        createdAt: serverTimestamp()
-      });
+      try {
+        await addDoc(collection(db, "system_logs"), {
+          uid: user.uid,
+          action: "AI_DRAFT_GENERATE",
+          details: `Generated ${selectedType.label} draft`,
+          createdAt: serverTimestamp()
+        });
+      } catch (dbErr) {
+        console.warn("Failed to log draft generation in Firestore (bypassing for demo):", dbErr);
+      }
 
     } catch (error) {
       console.error("AI Generation Error:", error);
