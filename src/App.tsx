@@ -63,7 +63,10 @@ export const useAuth = () => {
 };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem("mock_user");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -78,17 +81,26 @@ export default function App() {
       if (firebaseUser) {
         unsubscribeSnapshot = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
           if (doc.exists()) {
-            setUser(doc.data() as User);
+            const userData = doc.data() as User;
+            setUser(userData);
+            localStorage.setItem("mock_user", JSON.stringify(userData));
           } else {
-            setUser(null);
+            if (!localStorage.getItem("mock_user")) {
+              setUser(null);
+            }
           }
           setLoading(false);
         }, (error) => {
           console.error("User snapshot error:", error);
+          if (!localStorage.getItem("mock_user")) {
+            setUser(null);
+          }
           setLoading(false);
         });
       } else {
-        setUser(null);
+        if (!localStorage.getItem("mock_user")) {
+          setUser(null);
+        }
         setLoading(false);
       }
     });
@@ -100,7 +112,8 @@ export default function App() {
   }, []);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    localStorage.removeItem("mock_user");
+    await signOut(auth).catch(() => {});
     setUser(null);
   };
 

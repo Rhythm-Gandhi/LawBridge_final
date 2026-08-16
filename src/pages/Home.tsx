@@ -14,7 +14,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-block px-4 py-1.5 mb-8 text-xs font-bold uppercase tracking-widest text-accent bg-accent/10 rounded-full">
-              Prototype | Academic Project
+              PROTOTYPE
             </span>
             <h1 className="text-6xl lg:text-7xl font-bold serif leading-[1.1] mb-8">
               Understand Law.<br />
