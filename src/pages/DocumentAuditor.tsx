@@ -22,7 +22,6 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI, Type } from "@google/genai";
 import { collection, addDoc, query, where, orderBy, getDocs, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
@@ -102,64 +101,12 @@ export default function DocumentAuditor({ user }: { user: User }) {
     if (!text || isAnalyzing) return;
     setIsAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-1.5-pro";
-      const prompt = `Audit this legal document: "${file?.name || "document.txt"}"
-      
-      Document Content:
-      ${text}
-      
-      Identify:
-      1. Document Type (e.g., NDA, Lease, Employment Contract).
-      2. Key Obligations for both parties.
-      3. India-specific legal risks (e.g., Stamp Act compliance, Arbitration clauses under Indian law).
-      4. Suggested improvements.`;
-
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              documentType: { type: Type.STRING },
-              summary: { type: Type.STRING },
-              obligations: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    importance: { type: Type.STRING, enum: ['High', 'Medium', 'Low'] }
-                  },
-                  required: ['title', 'description', 'importance']
-                }
-              },
-              risks: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    severity: { type: Type.STRING, enum: ['Critical', 'High', 'Medium', 'Low'] }
-                  },
-                  required: ['title', 'description', 'severity']
-                }
-              },
-              improvements: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
-              }
-            },
-            required: ['documentType', 'summary', 'obligations', 'risks', 'improvements']
-          }
-        }
+      const response = await axios.post("/api/audit", {
+        text,
+        fileName: file?.name || "document.txt"
       });
 
-      const reportData = JSON.parse(response.text);
+      const reportData = response.data;
       setReport(reportData);
 
       // Save to Firestore
