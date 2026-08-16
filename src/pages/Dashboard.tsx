@@ -122,6 +122,12 @@ export default function Dashboard({ user }: DashboardProps) {
         { title: "Report Generated", desc: "Weekly platform usage summary", icon: <FileText /> }
       ];
     }
+    // Default activities for Citizen
+    return [
+      { title: "Document Audited: Lease Agreement", desc: "Completed with 4 warnings • 2 hours ago", icon: <FileText /> },
+      { title: "Legal Q&A: Property Dispute", desc: "Asked about tenant rights • Yesterday", icon: <Search /> },
+      { title: "Advocate Consulted: Adv. Rajesh Kumar", desc: "Request pending • 2 days ago", icon: <MessageSquare /> }
+    ];
   };
 
   const links = getSidebarLinks();
