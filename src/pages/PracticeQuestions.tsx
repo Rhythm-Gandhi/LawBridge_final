@@ -13,7 +13,7 @@ import {
   Filter
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI, Type } from "@google/genai";
+import axios from "axios";
 
 interface Question {
   id: number;
@@ -41,35 +41,30 @@ export default function PracticeQuestions({ user }: { user: User }) {
     setSelectedOption(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
       const prompt = `Generate 5 multiple-choice questions for a law student on the topic: "${selectedTopic}". 
       Each question should have 4 options and a clear explanation for the correct answer. 
       The questions should be challenging and relevant to Indian law.`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                id: { type: Type.INTEGER },
-                question: { type: Type.STRING },
-                options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                correctAnswer: { type: Type.INTEGER, description: "Index of the correct option (0-3)" },
-                explanation: { type: Type.STRING }
-              },
-              required: ["id", "question", "options", "correctAnswer", "explanation"]
-            }
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              id: { type: "INTEGER" },
+              question: { type: "STRING" },
+              options: { type: "ARRAY", items: { type: "STRING" } },
+              correctAnswer: { type: "INTEGER", description: "Index of the correct option (0-3)" },
+              explanation: { type: "STRING" }
+            },
+            required: ["id", "question", "options", "correctAnswer", "explanation"]
           }
         }
       });
 
-      const generatedQuestions = JSON.parse(response.text);
+      const generatedQuestions = JSON.parse(response.data.text);
       setQuestions(generatedQuestions);
     } catch (error) {
       console.error("Question Generation Error:", error);

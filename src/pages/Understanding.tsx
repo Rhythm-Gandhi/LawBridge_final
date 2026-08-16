@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import ReactMarkdown from "react-markdown";
 
 const COMMON_TERMS = [
@@ -36,8 +36,6 @@ export default function Understanding({ user }: { user: User }) {
     setSearchQuery(term);
     setIsExplaining(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
       const prompt = `Explain the legal term or concept "${term}" in the context of Indian Law. 
       Use simple, plain English that a non-lawyer can understand. 
       Include:
@@ -48,12 +46,12 @@ export default function Understanding({ user }: { user: User }) {
       
       Format with clear headings and bullet points.`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro"
       });
 
-      setExplanation(response.text);
+      setExplanation(response.data.text);
     } catch (error) {
       console.error("Explanation Error:", error);
       setExplanation("Failed to generate explanation. Please try again.");

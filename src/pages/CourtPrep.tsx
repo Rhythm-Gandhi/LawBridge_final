@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import ReactMarkdown from "react-markdown";
 
 export default function CourtPrep({ user }: { user: User }) {
@@ -30,8 +30,6 @@ export default function CourtPrep({ user }: { user: User }) {
     if (!caseDescription.trim() || isGenerating) return;
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
       const prompt = `I am preparing for a court appearance in India. 
       Case Description: "${caseDescription}"
       
@@ -44,12 +42,12 @@ export default function CourtPrep({ user }: { user: User }) {
       
       Format with clear headings, bullet points, and a supportive tone.`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro"
       });
 
-      setPrepPlan(response.text);
+      setPrepPlan(response.data.text);
     } catch (error) {
       console.error("Prep Error:", error);
       setPrepPlan("Failed to generate preparation plan. Please try again.");

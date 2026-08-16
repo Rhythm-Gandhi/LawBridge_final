@@ -13,7 +13,7 @@ import {
   Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import ReactMarkdown from "react-markdown";
 
 const LANDMARK_CASES = [
@@ -41,8 +41,6 @@ export default function CaseStudiesLibrary({ user }: { user: User }) {
   const handleAnalyzeCase = async (caseTitle: string) => {
     setIsAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
       const prompt = `Provide a detailed legal analysis of the landmark Indian case: "${caseTitle}". 
       Include:
       1. Facts of the case.
@@ -53,12 +51,12 @@ export default function CaseStudiesLibrary({ user }: { user: User }) {
       
       Format with clear headings and professional legal tone.`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro"
       });
 
-      setAiAnalysis(response.text);
+      setAiAnalysis(response.data.text);
     } catch (error) {
       console.error("Analysis Error:", error);
       setAiAnalysis("Failed to generate analysis. Please try again.");

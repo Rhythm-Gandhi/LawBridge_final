@@ -17,13 +17,11 @@ import {
   Scale
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 import { handleFirestoreError, OperationType } from "../../lib/firestore-errors";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const DRAFT_TYPES = [
   { id: "legal_notice", label: "Legal Notice", icon: FileText, prompt: "Draft a formal legal notice for..." },
@@ -45,9 +43,8 @@ export default function AIDrafting({ user }: { user: User }) {
 
     setIsGenerating(true);
     try {
-      const model = ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: `You are an expert Indian legal drafting assistant. 
+      const response = await axios.post("/api/generate", {
+        prompt: `You are an expert Indian legal drafting assistant. 
         Draft a professional ${selectedType.label} based on the following context:
         
         Context: ${context}
@@ -57,13 +54,11 @@ export default function AIDrafting({ user }: { user: User }) {
         - Follow standard Indian court formats.
         - Include placeholders for names, dates, and specific details in [BRACKETS].
         - Ensure the draft is legally sound and comprehensive.`,
-        config: {
-          systemInstruction: "You are a professional legal drafting assistant for Indian advocates. Provide high-quality, formal, and structured legal drafts.",
-        }
+        systemInstruction: "You are a professional legal drafting assistant for Indian advocates. Provide high-quality, formal, and structured legal drafts.",
+        model: "gemini-1.5-flash"
       });
 
-      const response = await model;
-      setDraft(response.text);
+      setDraft(response.data.text);
 
       // Log the action
       try {

@@ -14,7 +14,7 @@ import {
   Layout
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import ReactMarkdown from "react-markdown";
 
 const MODULES = [
@@ -34,8 +34,6 @@ export default function LearningHub({ user }: { user: User }) {
   const startLesson = async (moduleTitle: string) => {
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
       const prompt = `Create a comprehensive learning module for a law student on the topic: "${moduleTitle}". 
       Include:
       1. Introduction to the topic.
@@ -46,12 +44,12 @@ export default function LearningHub({ user }: { user: User }) {
       
       Format with clear headings, bullet points, and an educational tone.`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro"
       });
 
-      setLessonContent(response.text);
+      setLessonContent(response.data.text);
     } catch (error) {
       console.error("Lesson Generation Error:", error);
       setLessonContent("Failed to generate lesson content. Please try again.");

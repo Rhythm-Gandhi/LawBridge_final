@@ -14,7 +14,7 @@ import {
   Gavel
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import ReactMarkdown from "react-markdown";
 
 interface SimulationState {
@@ -46,8 +46,6 @@ export default function MockCaseSimulator({ user }: { user: User }) {
   const startSimulation = async () => {
     setIsProcessing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
       const prompt = `Generate a realistic legal scenario for a law student in India. 
       The scenario should involve a common legal issue (e.g., property dispute, contract breach, or minor criminal offense).
       Provide:
@@ -58,16 +56,16 @@ export default function MockCaseSimulator({ user }: { user: User }) {
       
       Keep it concise and engaging.`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro"
       });
 
       setState({
         ...state,
         stage: "scenario",
-        scenario: response.text,
-        history: [{ role: "system", content: response.text }]
+        scenario: response.data.text,
+        history: [{ role: "system", content: response.data.text }]
       });
     } catch (error) {
       console.error("Simulation Start Error:", error);
@@ -86,9 +84,6 @@ export default function MockCaseSimulator({ user }: { user: User }) {
     setIsProcessing(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
-      
       // If it's the 5th interaction, end with a verdict
       const isEnding = newHistory.filter(h => h.role === "user").length >= 3;
 
@@ -100,27 +95,28 @@ export default function MockCaseSimulator({ user }: { user: User }) {
            Be professional, ask a follow-up question to test their legal knowledge, and maintain the courtroom atmosphere.
            History: ${JSON.stringify(newHistory)}`;
 
-      const response = await ai.models.generateContent({
-        model,
-        contents: [{ parts: [{ text: prompt }] }],
+      const response = await axios.post("/api/generate", {
+        prompt,
+        model: "gemini-1.5-pro"
       });
 
       if (isEnding) {
         // Extract score from AI response if possible, otherwise mock it
-        const scoreMatch = response.text.match(/(\d+)\/100/);
+        const scoreMatch = response.data.text.match(/(\d+)\/100/);
         const score = scoreMatch ? parseInt(scoreMatch[1]) : 75;
         
         setState({
           ...state,
           stage: "verdict",
-          history: [...newHistory, { role: "judge", content: response.text }],
+          history: [...newHistory, { role: "judge", content: response.data.text }],
           score,
-          feedback: response.text
+          feedback: response.data.text
         });
       } else {
         setState({
           ...state,
-          history: [...newHistory, { role: "judge", content: response.text }]
+          stage: "interaction",
+          history: [...newHistory, { role: "judge", content: response.data.text }]
         });
       }
     } catch (error) {

@@ -5,7 +5,6 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useLocation } from "react-router-dom";
-import { GoogleGenAI } from "@google/genai";
 import { collection, addDoc, query, where, orderBy, getDocs, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
@@ -81,9 +80,6 @@ export default function LegalQA({ user }: { user: User }) {
       // 2. Synthesis Step
       setThinkingStatus("Analyzing BNS/BNSS and synthesizing answer...");
       
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-1.5-pro";
-      
       const systemInstruction = `You are a Senior Legal-Tech Specialist for "Law Bridge". 
       Your goal is to provide accurate legal information based on Indian Law (IPC, CrPC, and the new BNS/BNSS).
       
@@ -96,17 +92,18 @@ export default function LegalQA({ user }: { user: User }) {
       - Include a standard legal disclaimer: "Disclaimer: This is for informational purposes and not professional legal advice."
       - Be concise and professional.`;
 
-      const chat = ai.chats.create({
-        model,
-        config: { systemInstruction },
-        history: messages.map(m => ({
-          role: m.role === "user" ? "user" : "model",
-          parts: [{ text: m.text }]
-        })),
-      });
+      const historyContents = messages.map(m => ({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.text }]
+      }));
+      const contentsToSend = [...historyContents, { role: "user", parts: [{ text: userMessage }] }];
 
-      const result = await chat.sendMessage({ message: userMessage });
-      const responseText = result.text;
+      const response = await axios.post("/api/generate", {
+        contents: contentsToSend,
+        systemInstruction,
+        model: "gemini-1.5-pro"
+      });
+      const responseText = response.data.text;
       const caseResults = cases.map((c: any) => ({ title: c.title, url: c.url }));
       
       setMessages(prev => [...prev, { 

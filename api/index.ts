@@ -108,6 +108,81 @@ app.post("/api/audit", async (req, res) => {
   }
 });
 
+// Helper to recursively map string types to SDK Type enums for schema validations
+function convertSchemaTypes(schema: any): any {
+  if (!schema) return undefined;
+  
+  const typeMap: Record<string, Type> = {
+    "STRING": Type.STRING,
+    "INTEGER": Type.INTEGER,
+    "NUMBER": Type.NUMBER,
+    "BOOLEAN": Type.BOOLEAN,
+    "ARRAY": Type.ARRAY,
+    "OBJECT": Type.OBJECT,
+    "string": Type.STRING,
+    "integer": Type.INTEGER,
+    "number": Type.NUMBER,
+    "boolean": Type.BOOLEAN,
+    "array": Type.ARRAY,
+    "object": Type.OBJECT,
+  };
+
+  const newSchema = { ...schema };
+  if (typeof newSchema.type === 'string') {
+    const mapped = typeMap[newSchema.type];
+    if (mapped) {
+      newSchema.type = mapped;
+    }
+  }
+
+  if (newSchema.items) {
+    newSchema.items = convertSchemaTypes(newSchema.items);
+  }
+
+  if (newSchema.properties) {
+    const newProps: any = {};
+    for (const key of Object.keys(newSchema.properties)) {
+      newProps[key] = convertSchemaTypes(newSchema.properties[key]);
+    }
+    newSchema.properties = newProps;
+  }
+
+  return newSchema;
+}
+
+// Generic generation endpoint used by all other AI features
+app.post("/api/generate", async (req, res) => {
+  const { prompt, contents, systemInstruction, model, responseSchema, useJson } = req.body;
+
+  if (!prompt && !contents) {
+    return res.status(400).json({ error: "Prompt or contents are required" });
+  }
+
+  try {
+    const config: any = {};
+    if (systemInstruction) {
+      config.systemInstruction = systemInstruction;
+    }
+    if (useJson || responseSchema) {
+      config.responseMimeType = "application/json";
+    }
+    if (responseSchema) {
+      config.responseSchema = convertSchemaTypes(responseSchema);
+    }
+
+    const response = await ai.models.generateContent({
+      model: model || "gemini-1.5-flash",
+      contents: contents || [{ parts: [{ text: prompt }] }],
+      config
+    });
+
+    res.json({ text: response.text });
+  } catch (error: any) {
+    console.error("Backend Generation Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate content from AI" });
+  }
+});
+
 // Mock Auth
 app.post("/api/auth/login", (req, res) => {
   const { email, role } = req.body;
