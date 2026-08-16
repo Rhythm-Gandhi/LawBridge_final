@@ -82,7 +82,7 @@ export default function LegalQA({ user }: { user: User }) {
       setThinkingStatus("Analyzing BNS/BNSS and synthesizing answer...");
       
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3.1-pro-preview";
+      const model = "gemini-1.5-pro";
       
       const systemInstruction = `You are a Senior Legal-Tech Specialist for "Law Bridge". 
       Your goal is to provide accurate legal information based on Indian Law (IPC, CrPC, and the new BNS/BNSS).

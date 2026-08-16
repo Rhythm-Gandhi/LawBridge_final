@@ -46,7 +46,7 @@ export default function AIDrafting({ user }: { user: User }) {
     setIsGenerating(true);
     try {
       const model = ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: `You are an expert Indian legal drafting assistant. 
         Draft a professional ${selectedType.label} based on the following context:
         
